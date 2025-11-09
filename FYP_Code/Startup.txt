@@ -1,0 +1,166 @@
+FYP Python + Jupyter + GPU Cheatsheet (Windows)
+Target: Python 3.12 | venv: FYP_Code | GPU: NVIDIA RTX 4060
+------------------------------------------------------------
+
+★ Everyday Commands (use these all the time)
+------------------------------------------------------------
+# Navigate to project folder
+cd D:\Users\USER\Documents\Visual_Studio_Code
+
+# Activate your virtual environment
+FYP_Code\Scripts\activate
+
+# Launch Jupyter Notebook (using FYP_Code)
+jupyter notebook
+
+# Verify you’re using the correct Python
+where python
+
+# (Optional) Run VS Code with the right env selected
+code .
+
+------------------------------------------------------------
+1) Check / Install Python 3.12
+------------------------------------------------------------
+py -0                      :: list detected Python versions
+py -3.12 -V                :: ensure 3.12 is available
+
+If missing, install Python 3.12 (64-bit) from python.org, then re-run:
+    py -3.12 -V
+
+Tip: Install via winget (PowerShell):
+    winget install -e --id Python.Python.3.12
+
+------------------------------------------------------------
+2) Create / Recreate virtual environment (FYP_Code)
+------------------------------------------------------------
+cd D:\Users\USER\Documents\Visual_Studio_Code
+rmdir /s /q FYP_Code       :: remove old env (optional)
+py -3.12 -m venv FYP_Code  :: create venv with Python 3.12
+FYP_Code\Scripts\activate  :: activate
+python -m pip install --upgrade pip setuptools wheel
+
+Deactivate later:
+    deactivate
+
+------------------------------------------------------------
+3) Install frameworks + Jupyter
+------------------------------------------------------------
+PyTorch (GPU build):
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+    :: cu124 bundles CUDA 12.4 (works well with RTX 4060, ensure drivers up-to-date)
+
+Alternative wheel index:
+    pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu121
+
+TensorFlow (optional):
+    pip install tensorflow
+
+Jupyter + ipykernel:
+    pip install jupyter ipykernel
+
+------------------------------------------------------------
+4) Register this venv as a Jupyter kernel
+------------------------------------------------------------
+python -m ipykernel install --user --name FYP_Code --display-name "FYP_Code (py312)"
+
+------------------------------------------------------------
+5) Use the venv in Jupyter (browser)
+------------------------------------------------------------
+jupyter notebook
+Then: Kernel → Change Kernel → FYP_Code (py312)
+
+------------------------------------------------------------
+6) Use the venv in VS Code
+------------------------------------------------------------
+Ctrl+Shift+P → Python: Select Interpreter →
+    D:\Users\USER\Documents\Visual_Studio_Code\FYP_Code\Scripts\python.exe
+
+Open a .ipynb → top-right kernel picker → FYP_Code (py312)
+
+Optional project setting (.vscode/settings.json):
+{
+  "python.defaultInterpreterPath": "D:/Users/USER/Documents/Visual_Studio_Code/FYP_Code/Scripts/python.exe"
+}
+
+------------------------------------------------------------
+7) Quick GPU verification (run in Jupyter)
+------------------------------------------------------------
+import sys, torch
+print(sys.executable)
+print(torch.__version__)
+print('CUDA available:', torch.cuda.is_available())
+if torch.cuda.is_available():
+    print(torch.cuda.get_device_name(0))
+
+Mini benchmark:
+------------------------------------------------------------
+import time, torch
+size = 4096
+a = torch.randn(size, size); b = torch.randn(size, size)
+t0 = time.perf_counter(); _ = a @ b; cpu_s = time.perf_counter() - t0
+print(f'CPU matmul: {cpu_s:.3f}s')
+
+if torch.cuda.is_available():
+    a = a.to('cuda'); b = b.to('cuda'); torch.cuda.synchronize()
+    t0 = time.perf_counter(); _ = a @ b; torch.cuda.synchronize()
+    gpu_s = time.perf_counter() - t0
+    print(f'GPU matmul: {gpu_s:.3f}s'); print('Speedup:', round(cpu_s/gpu_s, 2))
+
+Optional TensorFlow check:
+------------------------------------------------------------
+import tensorflow as tf
+print('TF:', tf.__version__)
+gpus = tf.config.list_physical_devices('GPU')
+print('GPUs:', gpus)
+if gpus:
+    for g in gpus: tf.config.experimental.set_memory_growth(g, True)
+
+------------------------------------------------------------
+8) Kernel management
+------------------------------------------------------------
+List kernels:
+    jupyter kernelspec list
+
+Remove kernel:
+    jupyter kernelspec remove <kernel_name>
+
+Rename display name:
+    D:\Users\USER\Documents\Visual_Studio_Code\FYP_Code\FYP_Code\share\jupyter\kernels\FYP_Code\kernel.json
+
+Set friendly name:
+    { "display_name": "FYP_Code (py312)" }
+
+Make kernel default:
+    jupyter notebook --generate-config
+Edit %USERPROFILE%\.jupyter\jupyter_notebook_config.py
+Add:
+    c.MultiKernelManager.default_kernel_name = 'FYP_Code'
+
+------------------------------------------------------------
+9) Common fixes
+------------------------------------------------------------
+- Pip can’t find torch → You’re using Python 3.13; recreate env with 3.12
+- Kernel not listed → Re-run ipykernel install (step 4) and restart Jupyter/VS Code
+- GPU False → Ensure kernel = FYP_Code (py312), torch cu124 installed, then restart kernel
+- After installing new packages → Restart kernel
+- List torch versions → pip index versions torch -i https://download.pytorch.org/whl/cu124
+
+------------------------------------------------------------
+10) Handy commands
+------------------------------------------------------------
+FYP_Code\Scripts\activate           :: activate env
+where python                         :: verify which python is used
+pip list                             :: list installed packages
+pip show torch                       :: show torch build info
+jupyter kernelspec list              :: list kernels
+jupyter kernelspec remove <name>     :: remove kernel
+
+Extras
+------------------------------------------------------------
+- Keep GPU test notebook with Torch & TF checks.
+- Always install packages after activating FYP_Code.
+- Restart kernel after installing packages.
+
+Done ✅
+Keep this cheatsheet handy during FYP work!
