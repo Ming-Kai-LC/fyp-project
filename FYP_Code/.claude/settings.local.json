@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s /b 2)",
+      "Bash(nul)",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse -Force | Measure-Object -Sum -Property Length | Select-Object Count, @{Name=''Size_GB'';Expression={[math]::Round($_Sum/1GB, 2)}}\")",
+      "Bash(find:*)",
+      "Bash(python -c:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

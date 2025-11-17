@@ -46,6 +46,9 @@ Zip_file/
 !data/processed/.gitkeep
 !data/external/.gitkeep
 
+# Keep important CSV splits
+!data/processed/*.csv
+
 # Models (large binary files)
 models/*.pkl
 models/*.h5
@@ -65,7 +68,7 @@ references/*.pdf
 # IDE
 .vscode/
 .idea/
-.claude/
+# .claude/ - Keep this for skills
 *.swp
 *.swo
 *~
@@ -76,6 +79,10 @@ Thumbs.db
 
 # Logs
 *.log
+
+# MLflow tracking (can be large)
+notebooks/mlruns/
+mlruns/
 
 # Environment
 .env
