@@ -282,7 +282,35 @@ The project follows a 4-phase workflow aligned with CRISP-DM methodology. Each p
 - [ ] Flask demo functional (basic)
 - [ ] All code documented and tested
 
-### Code Organization
+### Code Organization (Phase-Based Structure)
+
+**IMPORTANT:** Always use `@fyp-folder-structure` skill to verify correct file locations before creating, moving, or deleting files.
+
+- **`notebooks/`**: All notebooks 00-16 (sequential, NOT organized by phase)
+  - `00_environment_setup.ipynb` through `16_flask_demo.ipynb`
+
+- **`experiments/`**: Phase-specific outputs (NEW STRUCTURE)
+  - **`phase1_exploration/`**: Weeks 1-2
+    - `eda_figures/`: EDA visualizations
+    - `baseline_results/`: Initial baseline test results
+    - `augmentation_tests/`: Data augmentation experiments
+
+  - **`phase2_systematic/`**: Weeks 3-6 (30 training runs)
+    - `models/{model_name}/`: Trained model checkpoints (.pth)
+    - `results/confusion_matrices/`: Per-seed confusion matrices
+    - `results/metrics/`: CSV files with accuracy/loss
+    - `results/training_logs/`: Detailed training outputs
+    - `mlruns/`: MLflow experiment tracking (unified)
+
+  - **`phase3_analysis/`**: Weeks 7-8
+    - `statistical_validation/`: 95% CIs, hypothesis tests
+    - `error_analysis/`: Misclassification analysis
+    - `ablation_studies/`: H2, H3, H4 hypothesis testing
+
+  - **`phase4_deliverables/`**: Weeks 9-10
+    - `thesis_content/chapter4_tables/`: Reproducibility tables
+    - `thesis_content/chapter5_figures/`: Publication-ready results
+    - `flask_demo/`: Web interface prototype
 
 - **`src/`**: Reusable modules imported by notebooks
   - `data_processing.py`: Loading, missing value handling, outlier removal, feature scaling
@@ -294,10 +322,10 @@ The project follows a 4-phase workflow aligned with CRISP-DM methodology. Each p
   - `processed/`: CLAHE-enhanced images, train/val/test splits
   - `external/`: Third-party augmentation sources
 
-- **`models/`**: Trained model artifacts (`.pkl`, `.h5`, `.pth`)
-- **`results/`**: Publication-ready outputs
-  - `figures/`: Confusion matrices, ROC curves, training plots (300 DPI)
-  - `tables/`: Metrics CSVs with 95% confidence intervals
+- **`docs/`**: Documentation files (.md), archived notebooks
+- **`scripts/`**: Utility scripts (train_*.py, optimize_*.py, etc.)
+- **`logs/`**: Training logs (.log files)
+- **`config/`**: Configuration files (if needed)
 
 ### Notebook Imports Pattern
 
@@ -491,7 +519,16 @@ Use Claude Code skills for specialized tasks. Each skill has a specific purpose:
 
 ### Core Skills (Use Daily)
 
-1. **`@fyp-jupyter`** - Your daily workflow guide
+1. **`@fyp-folder-structure`** - Folder structure enforcer (NEW)
+   - **Use when:** Before creating, moving, or deleting ANY file
+   - **Provides:** Phase-based file location rules, path validation
+   - **Examples:**
+     - "Where should I save this confusion matrix?"
+     - "Is this path correct?"
+     - "Check file location before saving"
+   - **CRITICAL:** Always consult this skill BEFORE file operations
+
+2. **`@fyp-jupyter`** - Your daily workflow guide
    - **Use when:** "What should I work on today?"
    - **Provides:** Phase identification, weekly goals, CRISP-DM workflow
    - **Examples:**
@@ -499,7 +536,7 @@ Use Claude Code skills for specialized tasks. Each skill has a specific purpose:
      - "How do I handle missing values?"
      - "How to set up MLflow?"
 
-2. **`@crossvit-covid19-fyp`** - Technical specifications
+3. **`@crossvit-covid19-fyp`** - Technical specifications
    - **Use when:** Need model/dataset/hardware details
    - **Provides:** CrossViT architecture, GPU constraints, hyperparameters
    - **Examples:**
@@ -507,7 +544,7 @@ Use Claude Code skills for specialized tasks. Each skill has a specific purpose:
      - "What's the input size?"
      - "How much VRAM needed?"
 
-3. **`@fyp-statistical-validator`** - Statistical validation & thesis formatting
+4. **`@fyp-statistical-validator`** - Statistical validation & thesis formatting
    - **Use when:** Need to validate results or format for thesis
    - **Provides:** 95% CIs, hypothesis tests, APA-formatted tables
    - **Examples:**
@@ -528,6 +565,7 @@ Use Claude Code skills for specialized tasks. Each skill has a specific purpose:
 ### Quick Decision Guide
 
 **I need to...**
+- **Check where to save a file** → `@fyp-folder-structure` (USE FIRST!)
 - Know what to work on → `@fyp-jupyter`
 - Understand CrossViT specs → `@crossvit-covid19-fyp`
 - Calculate statistics → `@fyp-statistical-validator`
@@ -547,10 +585,12 @@ Use Claude Code skills for specialized tasks. Each skill has a specific purpose:
 - Skipping reproducibility seeds (results not reproducible)
 
 **ALWAYS DO:**
+- **Use `@fyp-folder-structure` skill BEFORE creating/moving/deleting files** (NEW!)
+- **Save all outputs to `experiments/phase{1-4}/` folders** (NEW!)
 - Set `seed=42` for all random operations (Python, NumPy, PyTorch, CUDA)
 - **Use MLflow to log all training runs** (parameters, metrics, artifacts)
 - Test on small subset before full training (1000 images first)
-- Save intermediate outputs (preprocessed data, trained models)
+- Save intermediate outputs to phase-specific folders
 - Monitor GPU memory during training
 - Include proper error handling (CUDA OOM, file not found)
 - Use `tqdm` progress bars for long operations
