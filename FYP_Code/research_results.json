@@ -1,0 +1,59 @@
+{
+  "start_time": "2025-11-17T16:15:49.698180",
+  "experiments": [
+    {
+      "model": "ResNet-50 Baseline",
+      "phase": "Phase 1",
+      "success": true,
+      "time_minutes": 1.2819925665855407,
+      "timestamp": "2025-11-17T16:17:06.628300"
+    },
+    {
+      "model": "CrossViT-Tiny",
+      "phase": "Phase 2",
+      "success": false,
+      "time_minutes": 300.25150943199793,
+      "timestamp": "2025-11-17T21:17:51.726182"
+    },
+    {
+      "model": "ResNet-50",
+      "phase": "Phase 2",
+      "success": false,
+      "time_minutes": 0.2963025252024333,
+      "timestamp": "2025-11-17T21:18:39.513601"
+    },
+    {
+      "model": "DenseNet-121",
+      "phase": "Phase 2",
+      "success": false,
+      "time_minutes": 0.2868554353713989,
+      "timestamp": "2025-11-17T21:19:26.724995"
+    },
+    {
+      "model": "EfficientNet-B0",
+      "phase": "Phase 2",
+      "success": false,
+      "time_minutes": 0.4013857285181681,
+      "timestamp": "2025-11-17T21:20:20.810619"
+    },
+    {
+      "model": "ViT-Base",
+      "phase": "Phase 2",
+      "success": false,
+      "time_minutes": 3.3296634117762247,
+      "timestamp": "2025-11-17T21:24:10.604564"
+    },
+    {
+      "model": "Swin-Tiny",
+      "phase": "Phase 2",
+      "success": false,
+      "time_minutes": 0.39624364773432413,
+      "timestamp": "2025-11-17T21:25:04.395979"
+    }
+  ],
+  "phase_times": {},
+  "models_trained": 1,
+  "models_failed": 6,
+  "end_time": "2025-11-17T21:25:34.399918",
+  "total_hours": 5.1624142144785985
+}
