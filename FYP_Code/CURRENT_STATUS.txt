@@ -1,0 +1,48 @@
+=== TRAINING STATUS - 2025-11-19 02:30 ===
+
+ACTIVE TRAINING: ViT-Base
+GPU: 100% utilization, 32.3 GB VRAM (66%), 64°C
+Progress: Seed 42, Epoch 1 (77% complete)
+Model: 85.8M parameters
+
+✅ COMPLETED MODELS (4/6):
+1. ResNet-50: 95.45% ± 0.57%
+2. DenseNet-121: 95.32% ± 0.26%
+3. EfficientNet-B0: 95.23% ± 0.33%
+4. CrossViT-Tiny: 94.96% ± 0.55%
+
+🔄 IN PROGRESS:
+5. ViT-Base: Training started successfully (fixed img_size issue)
+   Estimated time: ~2.5 hours for 5 seeds
+
+⏸️ PENDING:
+6. Swin-Tiny: Will train after ViT completes
+   Estimated time: ~2 hours for 5 seeds
+
+FIXES APPLIED:
+✅ Added img_size=240 parameter to ViT model loading
+✅ Added img_size=240 parameter to Swin model loading
+✅ Both models now accept 240×240 input images
+
+ESTIMATED COMPLETION:
+- ViT-Base: ~05:00 (2.5 hours from now)
+- Swin-Tiny: ~07:00 (manually start after ViT)
+- All 6 models complete: ~07:00
+
+MONITORING:
+# Check ViT progress
+tail -f logs/vit_live_training.log
+
+# Check GPU
+nvidia-smi
+
+# Start Swin after ViT completes
+python train_all_models_safe.py swin
+
+WHAT'S NEXT:
+Once ViT completes, you can either:
+1. Manually start Swin: python train_all_models_safe.py swin
+2. Wait for me to start it automatically
+3. Check ViT results and decide
+
+Then you'll have ALL 6 models × 5 seeds = 30 complete training runs!

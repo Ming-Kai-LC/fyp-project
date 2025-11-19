@@ -1,0 +1,86 @@
+=== ERRORS FIXED - AUTO-TRAINING IN PROGRESS ===
+Date: 2025-11-19 02:32
+
+✅ FIXES APPLIED:
+1. Added img_size=240 to ViT model loading
+2. Added img_size=240 to Swin model loading
+3. Started ViT-Base training successfully
+4. Set up auto-monitor to start Swin when ViT completes
+
+🔄 CURRENTLY RUNNING:
+- ViT-Base training (5 seeds, ~2.5 hours)
+- Auto-monitor script (will start Swin automatically)
+
+📊 STATUS SUMMARY:
+
+COMPLETED (4/6):
+✅ ResNet-50:       95.45% ± 0.57%  (Best: 96.03%)
+✅ DenseNet-121:    95.32% ± 0.26%  (Best: 95.65%)
+✅ EfficientNet-B0: 95.23% ± 0.33%  (Best: 95.65%)
+✅ CrossViT-Tiny:   94.96% ± 0.55%  (Best: 95.65%)
+
+IN PROGRESS (1/6):
+🔄 ViT-Base: Training Seed 42, Epoch 1
+   GPU: 100% util, 32.3 GB VRAM, 64°C
+   ETA: ~2.5 hours (complete ~05:00)
+
+PENDING (1/6):
+⏸️ Swin-Tiny: Will auto-start when ViT completes
+   ETA: ~2 hours (complete ~07:00)
+
+═══════════════════════════════════════════════════════════
+
+⏱️ TIMELINE:
+
+Now (02:32):  ViT training started
+~05:00:       ViT completes, Swin auto-starts
+~07:00:       ALL 6 MODELS COMPLETE!
+
+Total: 4.5 hours remaining
+
+═══════════════════════════════════════════════════════════
+
+📁 WHAT YOU'LL HAVE WHEN COMPLETE:
+
+✅ 6 models × 5 seeds = 30 complete training runs
+✅ All model checkpoints saved
+✅ All results CSVs with detailed metrics
+✅ All confusion matrices (PNG)
+✅ MLflow tracking data
+✅ Ready for statistical validation!
+
+═══════════════════════════════════════════════════════════
+
+🔍 MONITORING COMMANDS:
+
+# Check ViT progress
+tail -f logs/vit_live_training.log
+
+# Check auto-monitor status
+tail -f logs/auto_monitor.log
+
+# Check GPU
+nvidia-smi
+
+# Check if ViT complete
+ls -lh experiments/phase2_systematic/models/vit/*.pth
+
+# Check if Swin started
+tail -f logs/swin_live_training.log
+
+═══════════════════════════════════════════════════════════
+
+💤 YOU CAN:
+
+1. Leave it running - everything is automated
+2. Come back in 4-5 hours - all training will be done
+3. Check progress anytime with commands above
+
+The auto-monitor will detect when ViT finishes and
+automatically start Swin without manual intervention!
+
+═══════════════════════════════════════════════════════════
+
+Last updated: 2025-11-19 02:32
+Next milestone: ViT completion (~05:00)
+Final completion: All 6 models (~07:00)
