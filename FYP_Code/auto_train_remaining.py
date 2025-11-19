@@ -48,11 +48,11 @@ def main():
 
     while True:
         if check_vit_complete():
-            print("\n✅ ViT-Base training complete!")
+            print("\n[OK] ViT-Base training complete!")
             break
 
         if not check_vit_running():
-            print("\n⚠️ Warning: ViT process not detected but models not complete")
+            print("\n[WARNING] ViT process not detected but models not complete")
             print("   Waiting for completion...")
 
         time.sleep(check_interval)
