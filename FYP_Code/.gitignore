@@ -56,6 +56,12 @@ models/*.pt
 models/*.pth
 models/*.joblib
 
+# Experiment models (exclude all .pth files)
+experiments/**/*.pth
+experiments/**/*.pkl
+experiments/**/*.h5
+experiments/**/*.pt
+
 # Results
 results/figures/*.png
 results/figures/*.jpg

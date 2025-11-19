@@ -56,9 +56,9 @@ BASE_CONFIG = {
     'image_size': 240,
     'class_names': ['COVID', 'Normal', 'Lung_Opacity', 'Viral Pneumonia'],
     'class_weights': [1.47, 0.52, 0.88, 3.95],
-    'batch_size': 200,  # Maximum safe for single user (RTX 6000 Ada 51GB)
+    'batch_size': 380,  # Maximized for RTX 6000 Ada (48GB VRAM, ~85-90% usage target)
     'num_workers': 8,  # Maximum data loading performance
-    'learning_rate': 1e-4,
+    'learning_rate': 1.78e-4,  # Scaled for larger batch size (1.2e-4 * 380/256)
     'weight_decay': 1e-4,
     'max_epochs': 30,
     'early_stopping_patience': 10,
@@ -204,10 +204,10 @@ def get_model(model_name, num_classes):
         model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
     elif model_name == 'vit':
         import timm
-        model = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=num_classes)
+        model = timm.create_model('vit_base_patch16_224', pretrained=True, img_size=240, num_classes=num_classes)
     elif model_name == 'swin':
         import timm
-        model = timm.create_model('swin_tiny_patch4_window7_224', pretrained=True, num_classes=num_classes)
+        model = timm.create_model('swin_tiny_patch4_window7_224', pretrained=True, img_size=240, num_classes=num_classes)
     elif model_name == 'crossvit':
         import timm
         model = timm.create_model('crossvit_tiny_240', pretrained=True, num_classes=num_classes)
