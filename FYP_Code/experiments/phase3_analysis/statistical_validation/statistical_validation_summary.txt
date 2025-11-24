@@ -1,0 +1,24 @@
+STATISTICAL VALIDATION SUMMARY
+================================================================================
+
+1. DESCRIPTIVE STATISTICS
+--------------------------------------------------------------------------------
+ResNet-50: M = 95.45%, SD = 0.57, 95% CI [95.03, 95.87]
+Swin-Tiny: M = 95.35%, SD = 0.53, 95% CI [94.94, 95.75]
+DenseNet-121: M = 95.32%, SD = 0.26, 95% CI [95.13, 95.53]
+EfficientNet-B0: M = 95.26%, SD = 0.35, 95% CI [94.99, 95.52]
+CrossViT-Tiny: M = 94.96%, SD = 0.55, 95% CI [94.55, 95.41]
+ViT-Tiny: M = 87.98%, SD = 1.90, 95% CI [86.38, 89.32]
+
+2. HYPOTHESIS TESTING (Bonferroni-corrected a' = 0.01)
+--------------------------------------------------------------------------------
+CrossViT vs ResNet-50: Diff = -0.48%, t = -1.236, p = 0.2842, d = -0.858, No
+CrossViT vs DenseNet-121: Diff = -0.36%, t = -1.207, p = 0.2940, d = -0.831, No
+CrossViT vs EfficientNet-B0: Diff = -0.29%, t = -2.976, p = 0.0409, d = -0.634, No
+CrossViT vs ViT-Tiny: Diff = +6.98%, t = +10.741, p = 0.0004, d = +4.989, Yes*
+CrossViT vs Swin-Tiny: Diff = -0.39%, t = -1.136, p = 0.3195, d = -0.718, No
+
+3. CONCLUSION
+--------------------------------------------------------------------------------
+H1: CrossViT achieves significantly higher accuracy than CNN baselines
+Result: PARTIALLY SUPPORTED - CrossViT significantly better than 1 model(s)

@@ -1,0 +1,30 @@
+ABLATION STUDIES SUMMARY
+================================================================================
+
+H2: DUAL-BRANCH VS SINGLE-SCALE
+--------------------------------------------------------------------------------
+Hypothesis: Dual-branch improves accuracy by >=5%
+CrossViT (Dual): 94.96% +/- 0.55%
+ViT (Single):    87.98% +/- 1.90%
+Difference: +6.98%
+Statistical test: t = +10.741, p = 0.0004
+Result: SUPPORTED
+Effect size: Cohen's d = 4.989
+
+H3: CLAHE ENHANCEMENT IMPACT
+--------------------------------------------------------------------------------
+Status: NOT YET TESTED
+Requires: Training on raw (no CLAHE) images
+Time estimate: 1-2 GPU hours
+
+H4: DATA AUGMENTATION STRATEGY
+--------------------------------------------------------------------------------
+Status: NOT YET TESTED
+Requires: Training with 3 augmentation levels
+Time estimate: 3 GPU hours
+
+RECOMMENDATIONS
+--------------------------------------------------------------------------------
+1. H2 complete - include in thesis
+2. H3 and H4 optional for completion (5 GPU hours total)
+3. If time-constrained, discuss H2 and limitations of untested hypotheses

@@ -1,0 +1,40 @@
+ERROR ANALYSIS SUMMARY
+================================================================================
+
+1. OVERALL PERFORMANCE (Seed 42)
+--------------------------------------------------------------------------------
+CrossViT-Tiny: 94.66%
+ResNet-50: 95.28%
+DenseNet-121: 95.28%
+
+2. MEDICAL METRICS FOR COVID DETECTION
+--------------------------------------------------------------------------------
+CrossViT-Tiny:
+  Sensitivity (Recall): 94.88%
+  Specificity: 98.23%
+  PPV (Precision): 91.71%
+  NPV: 98.94%
+ResNet-50:
+  Sensitivity (Recall): 95.44%
+  Specificity: 98.43%
+  PPV (Precision): 92.62%
+  NPV: 99.05%
+DenseNet-121:
+  Sensitivity (Recall): 95.44%
+  Specificity: 98.43%
+  PPV (Precision): 92.62%
+  NPV: 99.05%
+
+3. KEY FINDINGS
+--------------------------------------------------------------------------------
+- All models achieve >94% accuracy
+- COVID detection sensitivity: All models >90%
+- Viral Pneumonia is the hardest class (smallest sample size)
+- Most confusion between similar pathologies
+
+4. CLINICAL IMPLICATIONS
+--------------------------------------------------------------------------------
+- False negatives (COVID missed): HIGH RISK - requires attention
+- False positives (COVID over-diagnosed): Lower risk, treatable
+- High specificity important to avoid unnecessary treatments
+- Models show balanced performance across metrics
