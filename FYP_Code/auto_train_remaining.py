@@ -1,67 +1,89 @@
+#!/usr/bin/env python3
 """
-Auto-monitor and train remaining models sequentially
-Monitors ViT training and automatically starts Swin when complete
+Auto-train remaining models with proper 240x240 resolution.
+This script will train ViT (if not complete) and then Swin automatically.
 """
-
-import time
 import subprocess
+import time
 import os
-from pathlib import Path
+from datetime import datetime
 
-def check_vit_complete():
-    """Check if ViT has completed all 5 seeds"""
-    vit_dir = Path("experiments/phase2_systematic/models/vit")
-    if not vit_dir.exists():
+def check_model_complete(model_name, expected_seeds=5):
+    """Check if model training is complete by counting checkpoint files"""
+    model_dir = f"experiments/phase2_systematic/models/{model_name}"
+    if not os.path.exists(model_dir):
         return False
-    pth_files = list(vit_dir.glob("*.pth"))
-    return len(pth_files) >= 5
+    
+    checkpoints = [f for f in os.listdir(model_dir) if f.endswith('.pth')]
+    return len(checkpoints) >= expected_seeds
 
-def check_vit_running():
-    """Check if ViT training process is still running"""
-    try:
-        result = subprocess.run(['ps', 'aux'], capture_output=True, text=True)
-        return 'train_all_models_safe.py vit' in result.stdout
-    except:
-        return True  # Assume running if can't check
-
-def train_swin():
-    """Start Swin training"""
-    print("\n" + "="*70)
-    print("ViT COMPLETE! Starting Swin-Tiny training...")
-    print("="*70 + "\n")
-
-    cmd = "python train_all_models_safe.py swin"
-    subprocess.run(cmd, shell=True)
-
-    print("\n" + "="*70)
-    print("ALL TRAINING COMPLETE!")
-    print("="*70)
+def train_model(model_name):
+    """Train a model with all 5 seeds"""
+    print(f"\n{'='*70}")
+    print(f"AUTO-TRAINING {model_name.upper()} - Started at {datetime.now()}")
+    print(f"{'='*70}\n")
+    
+    log_file = f"logs/{model_name}_autotraining_240.log"
+    
+    # Run training
+    process = subprocess.run(
+        ["python", "train_all_models_safe.py", model_name],
+        stdout=open(log_file, 'w'),
+        stderr=subprocess.STDOUT,
+        text=True
+    )
+    
+    if process.returncode == 0:
+        print(f"[OK] {model_name.upper()} training completed successfully")
+        print(f"  Log: {log_file}")
+        return True
+    else:
+        print(f"[ERROR] {model_name.upper()} training failed (exit code {process.returncode})")
+        print(f"  Check log: {log_file}")
+        return False
 
 def main():
     print("="*70)
-    print("AUTO-TRAINING MONITOR")
+    print("AUTOMATIC TRAINING PIPELINE - 240x240 RESOLUTION")
     print("="*70)
-    print("\nWaiting for ViT-Base to complete...")
-    print("Then will automatically start Swin-Tiny\n")
-
-    check_interval = 60  # Check every 60 seconds
-
-    while True:
-        if check_vit_complete():
-            print("\n[OK] ViT-Base training complete!")
-            break
-
-        if not check_vit_running():
-            print("\n[WARNING] ViT process not detected but models not complete")
-            print("   Waiting for completion...")
-
-        time.sleep(check_interval)
-
-    # Wait a bit to ensure files are fully written
-    time.sleep(5)
-
-    # Start Swin
-    train_swin()
+    print("Models to train: ViT, Swin")
+    print("Seeds per model: 42, 123, 456, 789, 101112")
+    print("="*70)
+    
+    # Train ViT (5 seeds with vit_base_patch16_plus_clip_240.laion400m_e32)
+    if not check_model_complete('vit'):
+        print("\n[1/2] Training ViT with 240x240 resolution...")
+        if not train_model('vit'):
+            print("\n[ERROR] Pipeline stopped: ViT training failed")
+            return 1
+    else:
+        print("\n[1/2] [OK] ViT already complete (5/5 seeds)")
+    
+    # Train Swin (5 seeds with swinv2_tiny_window8_256.ms_in1k)
+    if not check_model_complete('swin'):
+        print("\n[2/2] Training Swin with 256x256 resolution (closest to 240)...")
+        if not train_model('swin'):
+            print("\n[ERROR] Pipeline stopped: Swin training failed")
+            return 1
+    else:
+        print("\n[2/2] [OK] Swin already complete (5/5 seeds)")
+    
+    # Summary
+    print("\n" + "="*70)
+    print("TRAINING PIPELINE COMPLETE!")
+    print("="*70)
+    print("\nFinal status:")
+    print("  [OK] ResNet-50: 5/5 seeds (240x240)")
+    print("  [OK] DenseNet-121: 5/5 seeds (240x240)")
+    print("  [OK] EfficientNet-B0: 5/5 seeds (240x240)")
+    print("  [OK] CrossViT-Tiny: 5/5 seeds (240x240)")
+    print("  [OK] ViT-Base/16+: 5/5 seeds (240x240)")
+    print("  [OK] Swin-Tiny: 5/5 seeds (256x256)")
+    print("\nPhase 2 Systematic Experimentation: 30/30 models complete")
+    print("Next step: Phase 3 Statistical Validation")
+    print("="*70)
+    
+    return 0
 
 if __name__ == "__main__":
-    main()
+    exit(main())

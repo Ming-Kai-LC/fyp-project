@@ -35,7 +35,7 @@ except ImportError:
     MLFLOW_AVAILABLE = False
 
 from sklearn.metrics import confusion_matrix
-from shared_gpu_config import get_safe_config, print_gpu_status
+# Removed auto-detection: from shared_gpu_config import get_safe_config, print_gpu_status
 
 warnings.filterwarnings('ignore')
 plt.style.use('seaborn-v0_8-darkgrid')
@@ -49,15 +49,15 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Base configuration
+# Base configuration - UNIFORM 240×240 RESOLUTION FOR FAIR COMPARISON
 BASE_CONFIG = {
     'device': device,
     'num_classes': 4,
-    'image_size': 240,
+    'image_size': 240,  # Uniform 240×240 for all models (Swin uses 256, closest available)
     'class_names': ['COVID', 'Normal', 'Lung_Opacity', 'Viral Pneumonia'],
     'class_weights': [1.47, 0.52, 0.88, 3.95],
-    'batch_size': 380,  # Maximized for RTX 6000 Ada (48GB VRAM, ~85-90% usage target)
-    'num_workers': 8,  # Maximum data loading performance
+    'batch_size': 42,  # 1/3 GPU usage for manual training
+    'num_workers': 2,  # Reduced for 1/3 resource allocation
     'learning_rate': 1.78e-4,  # Scaled for larger batch size (1.2e-4 * 380/256)
     'weight_decay': 1e-4,
     'max_epochs': 30,
@@ -65,16 +65,17 @@ BASE_CONFIG = {
     'mean': [0.485, 0.456, 0.406],
     'std': [0.229, 0.224, 0.225],
     'mixed_precision': True,
-    'seeds': [42, 123, 456, 789, 101112],
+    'seeds': [42, 123, 456],  # MODIFIED: Training missing Swin seeds only
 }
 
 # Dataset class - uses RAW images with on-the-fly CLAHE
 class COVID19DatasetRaw(Dataset):
     """Load raw images and apply CLAHE on-the-fly"""
-    def __init__(self, dataframe, transform=None, apply_clahe=True):
+    def __init__(self, dataframe, transform=None, apply_clahe=True, image_size=240):
         self.dataframe = dataframe.reset_index(drop=True)
         self.transform = transform
         self.apply_clahe = apply_clahe
+        self.image_size = image_size  # FIXED: Configurable image size
         self.image_paths = dataframe['image_path'].values  # Use raw image paths
         self.labels = dataframe['label'].values
 
@@ -94,8 +95,8 @@ class COVID19DatasetRaw(Dataset):
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
             image = clahe.apply(image)
 
-        # Resize to 240x240
-        image = cv2.resize(image, (240, 240))
+        # Resize to specified size (224 for ViT/Swin, 240 for others)
+        image = cv2.resize(image, (self.image_size, self.image_size))
 
         # Convert to RGB
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
@@ -192,7 +193,12 @@ def validate(model, loader, criterion, device, desc="Val"):
     return running_loss / len(loader), 100. * correct / total, np.array(all_preds), np.array(all_labels)
 
 def get_model(model_name, num_classes):
-    """Load model architecture"""
+    """
+    Load model architecture with uniform 240×240 resolution for fair comparison.
+
+    All models use 240×240 input except Swin which uses 256×256 (closest available).
+    This ensures methodologically sound comparison as per FYP requirements.
+    """
     if model_name == 'resnet50':
         model = models.resnet50(pretrained=True)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
@@ -204,10 +210,12 @@ def get_model(model_name, num_classes):
         model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
     elif model_name == 'vit':
         import timm
-        model = timm.create_model('vit_base_patch16_224', pretrained=True, img_size=240, num_classes=num_classes)
+        # Use ViT-Base/16+ CLIP with 240×240 resolution for fair comparison
+        model = timm.create_model('vit_base_patch16_plus_clip_240.laion400m_e32', pretrained=True, num_classes=num_classes)
     elif model_name == 'swin':
         import timm
-        model = timm.create_model('swin_tiny_patch4_window7_224', pretrained=True, img_size=240, num_classes=num_classes)
+        # Use SwinV2-Tiny with 256×256 (closest to 240, no 240 variant available)
+        model = timm.create_model('swinv2_tiny_window8_256.ms_in1k', pretrained=True, num_classes=num_classes)
     elif model_name == 'crossvit':
         import timm
         model = timm.create_model('crossvit_tiny_240', pretrained=True, num_classes=num_classes)
@@ -222,10 +230,19 @@ def train_model_single_seed(model_name, seed, config, train_df, val_df, test_df)
 
     set_seed(seed)
 
+    # Determine image size based on model (uniform 240 for fair comparison)
+    # All models use 240×240 except Swin which uses 256×256 (no 240 variant exists)
+    if model_name == 'swin':
+        image_size = 256  # SwinV2-Tiny requires 256 (closest to 240)
+    else:
+        image_size = 240  # Standard for all other models
+
+    print(f"Using image size: {image_size}×{image_size}")
+
     # Create datasets
-    train_dataset = COVID19DatasetRaw(train_df, transform=train_transform)
-    val_dataset = COVID19DatasetRaw(val_df, transform=val_transform)
-    test_dataset = COVID19DatasetRaw(test_df, transform=val_transform)
+    train_dataset = COVID19DatasetRaw(train_df, transform=train_transform, image_size=image_size)
+    val_dataset = COVID19DatasetRaw(val_df, transform=val_transform, image_size=image_size)
+    test_dataset = COVID19DatasetRaw(test_df, transform=val_transform, image_size=image_size)
 
     # Create dataloaders
     train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True,
@@ -331,10 +348,9 @@ def train_model_all_seeds(model_name):
     """Train one model with all 5 seeds"""
     print(f"\n{'='*70}\nSTARTING {model_name.upper()} TRAINING (5 SEEDS)\n{'='*70}")
 
-    # Check GPU and get safe config
-    print_gpu_status()
-    config = get_safe_config(model_name, BASE_CONFIG)
-    print(f"\nUsing configuration: batch_size={config['batch_size']}, num_workers={config['num_workers']}")
+    # Use BASE_CONFIG directly (fixed 1/3 GPU usage, no auto-detection)
+    config = BASE_CONFIG.copy()
+    print(f"\n[FIXED 1/3 GPU] batch_size={config['batch_size']}, num_workers={config['num_workers']}")
 
     # Load data
     train_df = pd.read_csv(CSV_DIR / "train.csv")

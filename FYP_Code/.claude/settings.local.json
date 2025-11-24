@@ -9,7 +9,10 @@
       "Grep",
       "NotebookEdit",
       "mcp__ide__executeCode",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Skill(fyp-jupyter)",
+      "Skill(fyp-folder-structure)",
+      "Skill(crossvit-covid19-fyp)"
     ],
     "deny": [],
     "ask": []
