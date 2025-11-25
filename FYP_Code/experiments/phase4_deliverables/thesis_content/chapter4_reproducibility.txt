@@ -1,0 +1,211 @@
+
+# Chapter 4: Reproducibility Statement
+
+**Section 4.5: Reproducibility and Computational Details**
+
+## 4.5.1 Random Seed Configuration
+
+To ensure reproducibility of all experimental results, random seeds were fixed across all computational libraries:
+
+- **Python random module:** seed = [42, 123, 456, 789, 101112] (5 different seeds per model)
+- **NumPy:** `np.random.seed(seed)` applied before all random operations
+- **PyTorch:** `torch.manual_seed(seed)` and `torch.cuda.manual_seed_all(seed)` set globally
+- **CUDA deterministic operations:** `torch.backends.cudnn.deterministic = True` and `torch.backends.cudnn.benchmark = False`
+
+Each of the 6 models (CrossViT-Tiny, ResNet-50, DenseNet-121, EfficientNet-B0, ViT-Tiny, Swin-Tiny) was trained with all 5 random seeds, resulting in 30 total training runs. Statistical validation was performed across these 30 runs using bootstrap confidence intervals (n = 10,000 resamples) and paired t-tests with Bonferroni correction (alpha' = 0.01).
+
+## 4.5.2 Hardware and Software Environment
+
+### Computational Hardware
+- **GPU:** NVIDIA GeForce RTX 4060 (8 GB VRAM)
+- **CPU:** [User's CPU - not specified in logs]
+- **RAM:** [User's RAM - not specified in logs]
+- **Operating System:** Windows 10/11 (based on file paths)
+
+### Software Dependencies
+- **Python:** 3.8+ (recommended 3.10)
+- **PyTorch:** 2.0+ with CUDA 11.8 support
+- **Torchvision:** 0.15+
+- **Timm (PyTorch Image Models):** 0.9.0+ (for CrossViT, ViT, Swin implementations)
+- **NumPy:** 1.24+
+- **Pandas:** 2.0+
+- **Scikit-learn:** 1.3+ (for metrics calculation)
+- **OpenCV:** 4.8+ (for CLAHE preprocessing)
+- **Matplotlib:** 3.7+ (for visualization)
+- **Seaborn:** 0.12+ (for statistical plots)
+
+All dependencies are listed in `requirements.txt` at the project root.
+
+## 4.5.3 Dataset Specifications
+
+- **Name:** COVID-19 Radiography Database (Kaggle, v6)
+- **Source:** Rahman et al. (2021), University of Dhaka & Qatar University
+- **Total Images:** 21,165 chest X-ray images (PNG format, grayscale, 299x299 pixels)
+- **Classes:**
+  - COVID-19: 3,616 images (17.1%)
+  - Normal: 10,192 images (48.2%)
+  - Lung Opacity: 6,012 images (28.4%)
+  - Viral Pneumonia: 1,345 images (6.4%)
+
+### Data Split Strategy
+- **Training Set:** 16,932 images (80%)
+- **Validation Set:** 2,116 images (10%)
+- **Test Set:** 2,117 images (10%)
+- **Split Method:** Stratified random split to preserve class distribution
+- **Split Seed:** 42 (fixed for reproducibility)
+
+## 4.5.4 Image Preprocessing Pipeline
+
+All images underwent identical preprocessing steps:
+
+1. **CLAHE Enhancement:**
+   - Clip Limit: 2.0
+   - Tile Grid Size: 8x8 pixels
+   - Applied to grayscale images before resizing
+
+2. **Resizing:**
+   - Target Size: 240x240 pixels (required by CrossViT-Tiny)
+   - Interpolation: Bilinear (cv2.INTER_LINEAR)
+
+3. **Channel Conversion:**
+   - Grayscale (1 channel) -> RGB (3 channels) via `cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)`
+   - Required for pre-trained models expecting ImageNet format
+
+4. **Normalization:**
+   - Mean: [0.485, 0.456, 0.406] (ImageNet statistics)
+   - Standard Deviation: [0.229, 0.224, 0.225] (ImageNet statistics)
+   - Applied after tensor conversion
+
+5. **Training-Only Augmentation:**
+   - Random Rotation: +/- 10 degrees
+   - Random Horizontal Flip: p = 0.5
+   - Color Jitter: brightness = 0.1, contrast = 0.1
+   - **No vertical flips** (anatomically incorrect for chest X-rays)
+
+## 4.5.5 Model Architecture Details
+
+### CrossViT-Tiny (Primary Model)
+- **Architecture:** Dual-branch Vision Transformer with cross-attention
+- **Patch Sizes:** 16x16 (large-scale branch) and 12x12 (small-scale branch)
+- **Input Resolution:** 240x240x3 RGB
+- **Parameters:** ~7 million (trainable)
+- **Pre-training:** ImageNet-1k weights loaded from `timm` library
+- **Classification Head:** Final linear layer with 4 outputs (modified from 1000)
+
+### Baseline Models
+All baselines used pre-trained ImageNet-1k weights:
+
+1. **ResNet-50:** 23.5M parameters, residual connections
+2. **DenseNet-121:** 7.0M parameters, dense connections
+3. **EfficientNet-B0:** 4.0M parameters, compound scaling
+4. **ViT-Tiny:** 5.7M parameters, single-scale patches (16x16)
+5. **Swin-Tiny:** 28.3M parameters, shifted window attention
+
+## 4.5.6 Training Configuration
+
+### Hyperparameters (Fixed Across All Models)
+- **Optimizer:** AdamW
+  - Learning Rate: 5e-5
+  - Weight Decay: 0.05
+  - Betas: (0.9, 0.999)
+  - Epsilon: 1e-8
+
+- **Learning Rate Scheduler:** CosineAnnealingWarmRestarts
+  - T_0: 10 epochs (first restart)
+  - T_mult: 2 (double period after each restart)
+
+- **Loss Function:** Weighted Cross-Entropy
+  - Weights: [1.47, 0.52, 0.88, 3.95] (inversely proportional to class frequencies)
+  - Addresses class imbalance (7.6:1 ratio)
+
+- **Training Parameters:**
+  - Maximum Epochs: 50
+  - Batch Size: 8 (due to 8GB VRAM constraint)
+  - Gradient Accumulation Steps: 4 (effective batch size = 32)
+  - Mixed Precision Training: Enabled (torch.cuda.amp)
+  - Early Stopping Patience: 15 epochs (based on validation loss)
+
+- **DataLoader Configuration:**
+  - num_workers: 4
+  - pin_memory: True
+  - persistent_workers: True
+  - shuffle: True (training only)
+
+### Memory Optimization Strategies
+- Mixed precision training (FP16) via `torch.cuda.amp.autocast()`
+- Gradient accumulation (4 steps) to simulate larger batch sizes
+- Periodic cache clearing: `torch.cuda.empty_cache()` every 10 batches
+- Gradient checkpointing: Disabled (not needed with batch_size=8)
+
+## 4.5.7 Evaluation Metrics
+
+### Primary Metrics
+- **Accuracy:** (TP + TN) / (TP + TN + FP + FN)
+- **Macro F1-Score:** Unweighted average of per-class F1-scores
+- **Weighted F1-Score:** Class-frequency weighted average of F1-scores
+
+### Medical Metrics (COVID-19 Detection)
+- **Sensitivity (Recall):** TP / (TP + FN) - Ability to detect COVID cases
+- **Specificity:** TN / (TN + FP) - Ability to correctly identify non-COVID cases
+- **Positive Predictive Value (PPV):** TP / (TP + FP) - Confidence in COVID diagnosis
+- **Negative Predictive Value (NPV):** TN / (TN + FN) - Confidence in ruling out COVID
+
+### Statistical Validation
+- **95% Confidence Intervals:** Bootstrap method with 10,000 resamples
+- **Hypothesis Testing:** Paired t-tests with Bonferroni correction
+  - Null Hypothesis (H0): Mean difference = 0
+  - Alternative Hypothesis (H1): Mean difference != 0
+  - Significance Level: alpha = 0.05
+  - Bonferroni-corrected alpha': 0.01 (5 comparisons)
+- **Effect Size:** Cohen's d for practical significance
+
+## 4.5.8 Code and Data Availability
+
+- **GitHub Repository:** https://github.com/Ming-Kai-LC/fyp-project
+- **Model Checkpoints:** Saved in `experiments/phase2_systematic/models/{model_name}/`
+- **Results Files:** All metrics and confusion matrices in `experiments/phase2_systematic/results/`
+- **Analysis Scripts:** Phase 3 scripts in project root directory
+- **Notebooks:** Sequential notebooks (00-16) in `notebooks/` directory
+
+### File Structure
+```
+FYP_Code/
+├── experiments/
+│   ├── phase2_systematic/
+│   │   ├── models/           # 30 model checkpoints (.pth files)
+│   │   └── results/          # Metrics CSVs, confusion matrices
+│   └── phase3_analysis/      # Statistical validation results
+├── notebooks/                # Jupyter notebooks (00-16)
+├── src/                      # Reusable Python modules
+├── data/
+│   ├── raw/                  # Original dataset (immutable)
+│   └── processed/            # CLAHE-enhanced images + splits
+└── requirements.txt          # Python dependencies
+```
+
+## 4.5.9 Reproducibility Checklist
+
+To reproduce these results:
+
+1. ✅ Install exact software versions from `requirements.txt`
+2. ✅ Download COVID-19 Radiography Database from Kaggle
+3. ✅ Run preprocessing: `notebooks/01_data_loading.ipynb` and `02_data_cleaning.ipynb`
+4. ✅ Set random seeds: [42, 123, 456, 789, 101112]
+5. ✅ Use identical hyperparameters (Section 4.5.6)
+6. ✅ Train each model 5 times (one per seed)
+7. ✅ Evaluate on test set using fixed splits (Section 4.5.3)
+8. ✅ Apply statistical validation methods (Section 4.5.7)
+
+**Expected Variance:** Due to GPU-specific floating-point operations, results may vary by +/- 0.5% accuracy even with fixed seeds. Statistical conclusions (p-values, effect sizes) should remain consistent.
+
+---
+
+**Citation:**
+
+For reproducibility details, cite this thesis:
+
+Tan, M. K. (2025). *CrossViT for COVID-19 chest X-ray classification: A comparative study with CNN baselines* [Undergraduate thesis]. Tunku Abdul Rahman University of Management and Technology.
+
+---
+
+**Note to Readers:** All code, trained models, and results are available in the GitHub repository linked above. For questions regarding reproducibility, contact the author via GitHub Issues.

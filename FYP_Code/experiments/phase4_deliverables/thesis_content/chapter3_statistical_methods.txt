@@ -1,0 +1,225 @@
+
+# Chapter 3: Statistical Methods
+
+**Section 3.6: Statistical Analysis and Validation**
+
+## 3.6.1 Overview
+
+To ensure rigorous evaluation of model performance and validate research hypotheses, this study employed multiple statistical techniques including bootstrap confidence intervals, hypothesis testing with multiple comparison corrections, and effect size calculations. All statistical analyses were conducted using Python 3.10 with the SciPy (v1.11) and NumPy (v1.24) libraries.
+
+## 3.6.2 Bootstrap Confidence Intervals
+
+### Theoretical Background
+
+Bootstrap resampling (Efron, 1979) is a non-parametric method for estimating the sampling distribution of a statistic. Unlike traditional parametric methods that assume normality, bootstrap makes minimal assumptions about the underlying distribution, making it suitable for machine learning evaluation where accuracy distributions may be skewed.
+
+### Implementation
+
+For each model, accuracy values from 5 independent training runs (with different random seeds) were resampled with replacement 10,000 times. The 95% confidence interval was constructed using the percentile method:
+
+1. **Resampling:** For a sample of size n=5, draw n values with replacement
+2. **Statistic Calculation:** Compute mean accuracy for each bootstrap sample
+3. **Distribution Construction:** Repeat steps 1-2 for 10,000 iterations
+4. **Interval Extraction:** CI = [2.5th percentile, 97.5th percentile]
+
+**Mathematical Formulation:**
+
+Let X = {x1, x2, ..., x5} represent accuracy values from 5 seeds.
+
+For b = 1 to 10,000:
+    X*_b = bootstrap sample of size 5 from X with replacement
+    theta*_b = mean(X*_b)
+
+CI_95% = [Q_0.025(theta*), Q_0.975(theta*)]
+
+where Q_p denotes the p-th quantile of the bootstrap distribution.
+
+### Interpretation
+
+A 95% confidence interval [L, U] indicates that if the experiment were repeated many times, 95% of such intervals would contain the true population mean. Narrower intervals indicate more precise estimates.
+
+**Bootstrap Parameters:**
+- Number of resamples: 10,000
+- Confidence level: 0.95
+- Method: Percentile bootstrap
+- Random seed: 42 (for reproducibility)
+
+## 3.6.3 Hypothesis Testing
+
+### Research Hypotheses
+
+**H1 (Primary):** CrossViT achieves significantly higher accuracy than CNN baselines
+- H0: mean(CrossViT) = mean(Baseline)
+- H1: mean(CrossViT) != mean(Baseline)
+
+**H2:** Dual-branch architecture (CrossViT) outperforms single-scale (ViT) by >= 5%
+- H0: mean(CrossViT) - mean(ViT) <= 5%
+- H1: mean(CrossViT) - mean(ViT) > 5%
+
+**H3:** CLAHE preprocessing improves accuracy by >= 2% vs no preprocessing
+- H0: mean(CLAHE) - mean(No-CLAHE) <= 2%
+- H1: mean(CLAHE) - mean(No-CLAHE) > 2%
+
+**H4:** Conservative augmentation improves generalization without accuracy degradation
+- H0: mean(Augmented) <= mean(No-Augmentation)
+- H1: mean(Augmented) > mean(No-Augmentation)
+
+### Paired t-Test
+
+Since each model was trained with identical random seeds, accuracy values are naturally paired. The paired t-test (Student, 1908) evaluates whether the mean difference between paired observations differs significantly from zero.
+
+**Test Statistic:**
+
+t = (mean_diff) / (SE_diff)
+
+where:
+- mean_diff = mean(X_CrossViT - X_Baseline)
+- SE_diff = SD_diff / sqrt(n)
+- SD_diff = standard deviation of pairwise differences
+- n = 5 (number of seeds)
+
+**Degrees of Freedom:** df = n - 1 = 4
+
+**Decision Rule:** Reject H0 if p-value < alpha
+
+### Multiple Comparison Correction (Bonferroni)
+
+Testing H1 against 5 baselines inflates Type I error (false positive) rate. The Bonferroni correction (Dunn, 1961) controls the family-wise error rate (FWER) by adjusting the significance threshold:
+
+alpha' = alpha / m
+
+where:
+- alpha = 0.05 (original significance level)
+- m = 5 (number of comparisons: CrossViT vs 5 baselines)
+- alpha' = 0.01 (Bonferroni-corrected threshold)
+
+**Interpretation:** A p-value < 0.01 indicates statistical significance after correction.
+
+**Note:** Bonferroni is conservative (reduces power) but ensures strong control of FWER, appropriate for confirmatory analyses.
+
+## 3.6.4 Effect Size (Cohen's d)
+
+Statistical significance (p-value) indicates whether an effect exists, but not its magnitude. Cohen's d (Cohen, 1988) quantifies practical significance:
+
+d = (mean1 - mean2) / pooled_SD
+
+where:
+
+pooled_SD = sqrt((SD1^2 + SD2^2) / 2)
+
+**Interpretation (Cohen, 1988):**
+- |d| < 0.2: Negligible effect
+- 0.2 <= |d| < 0.5: Small effect
+- 0.5 <= |d| < 0.8: Medium effect
+- |d| >= 0.8: Large effect
+
+**Application:** Even if statistically significant (p < 0.01), a result with |d| < 0.2 may lack practical importance. Conversely, a large effect size (d > 0.8) with p > 0.01 may indicate insufficient power rather than no effect.
+
+## 3.6.5 Medical Metrics and Diagnostic Performance
+
+For COVID-19 detection, binary classification metrics were computed by treating COVID as the positive class and all other classes (Normal, Lung Opacity, Viral Pneumonia) as the negative class.
+
+### Confusion Matrix Elements
+
+|                  | Predicted COVID | Predicted Non-COVID |
+|------------------|-----------------|---------------------|
+| **Actual COVID** | TP (True Pos)   | FN (False Neg)      |
+| **Actual Non-COVID** | FP (False Pos) | TN (True Neg)       |
+
+### Metrics Definitions
+
+**Sensitivity (Recall, True Positive Rate):**
+
+Sensitivity = TP / (TP + FN)
+
+- Measures ability to detect COVID-positive cases
+- Clinical importance: High sensitivity minimizes missed diagnoses (critical for infectious disease)
+
+**Specificity (True Negative Rate):**
+
+Specificity = TN / (TN + FP)
+
+- Measures ability to correctly identify non-COVID cases
+- Clinical importance: High specificity reduces unnecessary quarantine/treatment
+
+**Positive Predictive Value (Precision):**
+
+PPV = TP / (TP + FP)
+
+- Probability that a positive prediction is correct
+- Depends on disease prevalence
+
+**Negative Predictive Value:**
+
+NPV = TN / (TN + FN)
+
+- Probability that a negative prediction is correct
+- High NPV means negative results are reliable for ruling out disease
+
+**F1-Score (Harmonic Mean):**
+
+F1 = 2 * (Precision * Recall) / (Precision + Recall)
+
+- Balances precision and recall
+- Used when class imbalance exists
+
+### Clinical Decision Thresholds
+
+In medical screening:
+- **High sensitivity preferred:** Minimize false negatives (missing infected patients)
+- **High specificity preferred:** Minimize false positives (unnecessary treatments)
+
+Trade-off managed via:
+1. Weighted loss function during training (higher weight for minority class)
+2. Threshold tuning on validation set (default: 0.5)
+3. Evaluation of both sensitivity and specificity jointly
+
+## 3.6.6 Statistical Software and Reproducibility
+
+**Primary Libraries:**
+- **SciPy (v1.11.0):** `scipy.stats.ttest_rel()` for paired t-tests
+- **NumPy (v1.24.0):** `np.random.choice()` for bootstrap resampling
+- **Scikit-learn (v1.3.0):** `sklearn.metrics` for confusion matrix, F1-score
+- **Pandas (v2.0.0):** Data manipulation and aggregation
+
+**Reproducibility Measures:**
+- All random operations seeded (seed=42)
+- Statistical parameters documented (n_resamples=10,000, alpha=0.05)
+- Exact library versions specified in `requirements.txt`
+- Analysis scripts provided in `experiments/phase3_analysis/`
+
+## 3.6.7 Assumptions and Limitations
+
+### Assumptions
+1. **Independence:** Each of the 5 training runs is independent (different random seeds)
+2. **Identically Distributed:** All runs use identical hyperparameters and data
+3. **No Data Leakage:** Train/val/test splits are fixed and disjoint
+4. **Representative Test Set:** 2,117 test images represent the true population
+
+### Limitations
+1. **Small Sample Size:** n=5 seeds may have limited power for detecting small effects
+2. **Single Dataset:** Generalizability to other COVID-19 datasets not validated
+3. **Fixed Hyperparameters:** Optimal hyperparameters for each model not explored
+4. **Class Imbalance:** Viral Pneumonia class under-represented (6.4% of data)
+
+**Mitigations:**
+- Bootstrap CIs account for sampling variability
+- Conservative Bonferroni correction reduces false discovery
+- Large effect sizes (d > 0.8) prioritized over marginal significance
+- Weighted loss function addresses class imbalance during training
+
+## 3.6.8 References
+
+Cohen, J. (1988). *Statistical power analysis for the behavioral sciences* (2nd ed.). Lawrence Erlbaum Associates.
+
+Dunn, O. J. (1961). Multiple comparisons among means. *Journal of the American Statistical Association*, 56(293), 52-64.
+
+Efron, B. (1979). Bootstrap methods: Another look at the jackknife. *The Annals of Statistics*, 7(1), 1-26.
+
+Student. (1908). The probable error of a mean. *Biometrika*, 6(1), 1-25.
+
+---
+
+**Note:** All statistical methods align with American Psychological Association (APA) 7th Edition reporting standards and recommendations from the American Statistical Association (Wasserstein & Lazar, 2016).
+
+Wasserstein, R. L., & Lazar, N. A. (2016). The ASA's statement on p-values: Context, process, and purpose. *The American Statistician*, 70(2), 129-133.
