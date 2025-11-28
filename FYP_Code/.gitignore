@@ -49,6 +49,10 @@ Zip_file/
 # Keep important CSV splits
 !data/processed/*.csv
 
+# Keep results CSVs (small, important for reproducibility)
+!results/*.csv
+!experiments/**/*.csv
+
 # Models (large binary files)
 models/*.pkl
 models/*.h5
